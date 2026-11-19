@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coding Station</title>
+<style>
+:root{--bg:#171a2b;--panel:#20243b;--line:#343a5c;--text:#e8eaf6;--dim:#9aa0c4;--accent:#ff7a93;--ok:#5eead4}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif;display:flex;flex-direction:column}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0 auto 0 0;letter-spacing:.3px}
+select,button,label{font:inherit;color:var(--text)}
+select,button{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer}
+button:hover,select:hover{border-color:var(--dim)}
+button.run{background:var(--accent);border-color:var(--accent);color:#2a0d15;font-weight:700}
+button:focus-visible,select:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid var(--ok);outline-offset:2px}
+label{color:var(--dim);display:flex;gap:6px;align-items:center}
+main{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
+section{display:flex;flex-direction:column;min-height:0;min-width:0}
+section+section{border-left:1px solid var(--line)}
+.tag{padding:6px 14px;color:var(--dim);font-size:13px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+#err{color:var(--accent)}
+textarea{flex:1;width:100%;resize:none;border:0;background:var(--panel);color:var(--text);padding:14px;font:14px/1.55 ui-monospace,Menlo,Consolas,monospace;tab-size:2;white-space:pre}
+iframe{flex:1;width:100%;border:0;background:#fff}
+@media(max-width:760px){main{grid-template-columns:1fr;grid-template-rows:1fr 1fr}section+section{border-left:0;border-top:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Coding Station</h1>
+  <select id="examples" aria-label="Load an example"></select>
+  <label><input type="checkbox" id="auto"> Run as I type</label>
+  <button id="save">Save</button>
+  <button id="run" class="run">Run (Ctrl+Enter)</button>
+</header>
+<main>
+  <section>
+    <div class="tag"><span>Code (HTML, CSS, JavaScript)</span><span id="status"></span></div>
+    <textarea id="code" spellcheck="false" aria-label="Code editor"></textarea>
+  </section>
+  <section>
+    <div class="tag"><span>Output</span><span id="err"></span></div>
+    <iframe id="out" sandbox="allow-scripts" title="Output"></iframe>
+  </section>
+</main>
+<script>
+const EXAMPLES = {
+"Bouncing balls": `<canvas id="c"></canvas>
+<style>body{margin:0;background:#0f1226}canvas{display:block}</style>
+<script>
+const c=document.getElementById('c'),x=c.getContext('2d');
+function fit(){c.width=innerWidth;c.height=innerHeight}fit();onresize=fit;
+const balls=Array.from({length:25},()=>({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-.5)*6,vy:(Math.random()-.5)*6,r:8+Math.random()*16,h:Math.random()*360}));
+(function loop(){
+  x.fillStyle='rgba(15,18,38,.25)';x.fillRect(0,0,c.width,c.height);
+  for(const b of balls){
+    b.x+=b.vx;b.y+=b.vy;
+    if(b.x<b.r||b.x>c.width-b.r)b.vx*=-1;
+    if(b.y<b.r||b.y>c.height-b.r)b.vy*=-1;
+    x.fillStyle='hsl('+b.h+',80%,65%)';
+    x.beginPath();x.arc(b.x,b.y,b.r,0,7);x.fill();
+  }
+  requestAnimationFrame(loop);
+})();
+<\/script>`,
+"Spinning squares": `<style>
+body{margin:0;height:100vh;display:grid;place-items:center;background:#101426}
+.box{position:absolute;width:120px;height:120px;border:3px solid #ff7a93;animation:spin 6s linear infinite}
+.box:nth-child(2){width:180px;height:180px;border-color:#5eead4;animation-duration:9s;animation-direction:reverse}
+.box:nth-child(3){width:240px;height:240px;border-color:#fcd34d;animation-duration:12s}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+<div class="box"></div><div class="box"></div><div class="box"></div>`,
+"Analog clock": `<canvas id="c" width="300" height="300"></canvas>
+<style>body{margin:0;height:100vh;display:grid;place-items:center;background:#101426}</style>
+<script>
+const x=document.getElementById('c').getContext('2d');
+function hand(a,len,w,col){x.save();x.translate(150,150);x.rotate(a-Math.PI/2);x.strokeStyle=col;x.lineWidth=w;x.lineCap='round';x.beginPath();x.moveTo(0,0);x.lineTo(len,0);x.stroke();x.restore()}
+(function tick(){
+  x.clearRect(0,0,300,300);
+  x.strokeStyle='#5eead4';x.lineWidth=4;x.beginPath();x.arc(150,150,140,0,7);x.stroke();
+  const d=new Date(),s=d.getSeconds()+d.getMilliseconds()/1000,m=d.getMinutes()+s/60,h=d.getHours()%12+m/60;
+  hand(h/12*6.283,70,6,'#e8eaf6');hand(m/60*6.283,105,4,'#e8eaf6');hand(s/60*6.283,120,2,'#ff7a93');
+  requestAnimationFrame(tick);
+})();
+<\/script>`,
+"Hello page": `<h1>Hello, world!</h1>
+<p>Change this code and press Run.</p>
+<button onclick="this.textContent='Clicked '+(++n)+' times'">Click me</button>
+<script>let n=0<\/script>
+<style>body{font-family:sans-serif;padding:24px;background:#fff;color:#222}</style>`
+};
+
+const $ = id => document.getElementById(id);
+const code=$('code'), out=$('out'), err=$('err'), status=$('status'), sel=$('examples');
+const KEY='codingStation.code';
+
+sel.innerHTML = '<option value="">Load an example…</option>' +
+  Object.keys(EXAMPLES).map(k=>`<option>${k}</option>`).join('');
+
+function run(){
+  err.textContent='';
+  // Catch errors from inside the sandboxed output
+  const catcher = '<script>onerror=function(m,s,l){parent.postMessage({err:m+" (line "+l+")"},"*")}<\/script>';
+  out.srcdoc = catcher + code.value;
+}
+addEventListener('message', e => { if(e.data && e.data.err) err.textContent = e.data.err; });
+
+function save(){
+  try{localStorage.setItem(KEY, code.value); status.textContent='Saved'}
+  catch(e){status.textContent='Could not save'}
+  setTimeout(()=>status.textContent='',1500);
+}
+
+sel.onchange = () => { if(EXAMPLES[sel.value]){ code.value = EXAMPLES[sel.value]; run(); } sel.value=''; };
+$('run').onclick = run;
+$('save').onclick = save;
+
+let t;
+code.addEventListener('input', () => { if($('auto').checked){ clearTimeout(t); t=setTimeout(run,500); } });
+code.addEventListener('keydown', e => {
+  if((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); run(); }
+  if((e.ctrlKey||e.metaKey) && e.key==='s'){ e.preventDefault(); save(); }
+  if(e.key==='Tab'){ e.preventDefault(); const s=code.selectionStart; code.setRangeText('  ',s,code.selectionEnd,'end'); }
+});
+
+let saved=null;
+try{ saved = localStorage.getItem(KEY) }catch(e){}
+code.value = saved || EXAMPLES["Bouncing balls"];
+run();
+</script>
+</body>
+</html>
